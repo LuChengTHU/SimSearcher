@@ -1,18 +1,17 @@
-CXX=g++-4.8
+CXX=g++
 CXXFLAGS=-std=c++11 -Wall -O3 -MMD -MP
-TARGET=simsearcher
+TARGET=searcher
 
-SRC=$(shell ls *.cpp)
+SRC=SimSearcher.cpp main.cpp
 
 all: $(TARGET)
 
-$(TARGET): $(SRC:.cpp=.o)
+$(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) $+ -o $@
-
--include $(SRC:.cpp=.d)
+	del *.o *.d
 
 clean:
-	$(RM) *.o *.d $(TARGET)
+	del *.o *.d $(TARGET)
 
 .PHONY: all clean
 
