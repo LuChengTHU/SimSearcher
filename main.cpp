@@ -14,14 +14,13 @@ int main(int argc, char **argv)
 
     searcher.createIndex(argv[1], q);
     cout << "Build Index success!" << endl;
-    searcher.print();
-    searcher.searchJaccard("Intel Corporation", jaccardThreshold, resultJaccard);
+    searcher.searchJaccard("hello world", jaccardThreshold, resultJaccard);
     cout << "Jaccard Success!" << endl;
     int jac_size = resultJaccard.size();
     cout << "Result_size: " << jac_size << endl;
     for (int i = 0; i < jac_size; i++)
         cout << resultJaccard[i].first << " " << resultJaccard[i].second << endl;
-    searcher.searchED("Intel Corporation", edThreshold, resultED);
+    searcher.searchED("TIm JHankss", edThreshold, resultED);
     cout << "ED Success!" << endl;
     int ed_size = resultED.size();
     cout << "Result_size: " << ed_size << endl;
