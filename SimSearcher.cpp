@@ -18,6 +18,14 @@ inline bool comp(pair<int, int> a, pair<int, int> b)
     return a.second < b.second;
 }
 
+inline int my_abs(int a)
+{
+    if (a > 0)
+        return a;
+    else
+        return -a;
+}
+
 void split(string strtem, vector<string>& strvec, char a)
 {
     strvec.clear();
@@ -172,41 +180,27 @@ unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double 
 {
     int m = str1.length();
     int n = str2.length();
-    return 1;
-    // Create a table to store results of subproblems
     int dp[m+1][n+1];
-
-    // Fill d[][] in bottom up manner
-    for (int i=0; i<=m; i++)
+    for (int i = 0; i <= m; i++)
     {
-        for (int j=0; j<=n; j++)
+        dp[i][0] = i;
+    }
+    for (int j = 0; j <= n; j++)
+    {
+        dp[0][j] = j;
+    }
+    for (int i = 1; i <= m; i++)
+    {
+        for (int j = 1; j <= n; j++)
         {
-            // If first string is empty, only option is to
-            // isnert all characters of second string
-            if (i==0)
-                dp[i][j] = j;  // Min. operations = j
-
-            // If second string is empty, only option is to
-            // remove all characters of second string
-            else if (j==0)
-                dp[i][j] = i; // Min. operations = i
-
-            // If last characters are same, ignore last char
-            // and recur for remaining string
-            else if (str1[i-1] == str2[j-1])
-                dp[i][j] = dp[i-1][j-1];
-
-            // If last character are different, consider all
-            // possibilities and find minimum
-            else
-                dp[i][j] = 1 + min_3(dp[i][j-1],  // Insert
-                                   dp[i-1][j],  // Remove
-                                   dp[i-1][j-1]); // Replace
+            int t = !(str1[i] == str2[j]);
+            dp[i][j] = min_3(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + t);
         }
     }
-
     return dp[m][n];
-
 }
 
 int SimSearcher::createIndex(const char *filename, unsigned q)
@@ -274,6 +268,8 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<unsigned, double> > &result)
 {
 	result.clear();
+
+    /*
     string q_str(query);
     vector<pair<int, int>> cand_list; // index, list_length
     vector<int> cand_lines;
@@ -362,6 +358,22 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
     }
 
     delete[] lines_count;
+    */
+
+    for (int i = 0; i < line_num; i++)
+    {
+        vector<int> query_indexes;
+        string q_str(query);
+        str2HashIndex(q_str, query_indexes, false);
+        vector<int> r;
+        str2HashIndex(context_jac[i], r, false);
+        int jac = compute_jaccard(query_indexes, r, threshold);
+        // cout << "Line: " << line << " , ed: " << ed << endl;
+        if (jac >= threshold)
+        {
+            result.push_back(make_pair(i, jac));
+        }
+    }
     return SUCCESS;
 }
 
@@ -369,6 +381,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 {
 	result.clear();
     string q_str(query);
+    /*
     vector<pair<int, int>> cand_list; // index, list_length
     vector<int> cand_lines;
     vector<int> short_cand_lines;
@@ -440,6 +453,8 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
         }
         for (auto line : short_cand_lines)
         {
+            if (my_abs(q_str.length() - context_ed[line].length()) > threshold)
+                continue;
             int cnt = lines_count[line];
             for (int i = num_short_list; i < word_num; i++)
             {
@@ -461,9 +476,9 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
     sort(cand_lines.begin(), cand_lines.end());
     for (auto line : cand_lines)
     {
-        //cout << "Cand: " << line << endl;
+        // cout << "Cand: " << line << endl;
         int ed = compute_ed(query, context_ed[line], threshold, q_gram);
-        //cout << "Line: " << line << " , ed: " << ed << endl;
+        // cout << "Line: " << line << " , ed: " << ed << endl;
         if (ed <= threshold)
         {
             result.push_back(make_pair(line, ed));
@@ -471,7 +486,16 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
     }
 
     delete[] lines_count;
-
-	return SUCCESS;
+    */
+    for (int i = 0; i < line_num; i++)
+    {
+        int ed = compute_ed(query, context_ed[i], threshold, q_gram);
+        // cout << "Line: " << line << " , ed: " << ed << endl;
+        if (ed <= threshold)
+        {
+            result.push_back(make_pair(i, ed));
+        }
+    }
+    return SUCCESS;
 }
 

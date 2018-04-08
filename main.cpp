@@ -13,15 +13,8 @@ int main(int argc, char **argv)
 	double jaccardThreshold = 0.1;
 
     searcher.createIndex(argv[1], q);
-    cout << "Build Index success!" << endl;
     searcher.searchJaccard("hello world", jaccardThreshold, resultJaccard);
-    cout << "Jaccard Success!" << endl;
-    int jac_size = resultJaccard.size();
-    cout << "Result_size: " << jac_size << endl;
-    for (int i = 0; i < jac_size; i++)
-        cout << resultJaccard[i].first << " " << resultJaccard[i].second << endl;
-    searcher.searchED("TIm JHankss", edThreshold, resultED);
-    cout << "ED Success!" << endl;
+    searcher.searchED("toto jjl", edThreshold, resultED);
     int ed_size = resultED.size();
     cout << "Result_size: " << ed_size << endl;
     for (int i = 0; i < ed_size; i++)
