@@ -48,6 +48,11 @@ inline int my_max(int a, int b)
     return a > b ? a : b;
 }
 
+inline int min_3(int x, int y, int z)
+{
+    return min(min(x, y), z);
+}
+
 void split(string strtem, set<string>& strvec, char a)
 {
     strvec.clear();
@@ -70,8 +75,6 @@ void split(string strtem, set<string>& strvec, char a)
 
 SimSearcher::SimSearcher()
 {
-    jaccard_hash = new string[HASH_SIZE];
-    jaccard_list = new vector<int> *[HASH_SIZE];
 }
 
 SimSearcher::~SimSearcher()
@@ -80,9 +83,11 @@ SimSearcher::~SimSearcher()
 
 void SimSearcher::initIndex()
 {
-    context_jac.clear();
-    context_ed.clear();
+    context.clear();
     ed_list.clear();
+    jaccard_list.clear();
+    lines_indexes.clear();
+    min_line_size = MAX_INT;
 }
 
 int SimSearcher::get_jacc_threshold(double threshold, int num)
@@ -98,64 +103,17 @@ int SimSearcher::get_ed_threshold(double threshold, int query_len, int q)
     return ceil(t1) > 0 ? ceil(t1) : 0;
 }
 
-int SimSearcher::my_hash(const string& str)
+double SimSearcher::compute_jaccard(set<string> &l1, set<string> &l2, double threshold)
 {
-    return 1;
-}
-
-int SimSearcher::findHashTableIndex(const string& str, string* table, bool adding, bool getAll)
-{
-    int hash_value = my_hash(str);
-    int inc = 1;
-    while ((!table[hash_value].empty()) && table[hash_value].compare(str))
-    {
-        hash_value += inc;
-        inc *= 2;
-        if (hash_value >= HASH_SIZE)
-            hash_value = hash_value % HASH_SIZE;
-    }
-    if (table[hash_value].empty()) {
-        if (adding)
-            table[hash_value] = str;
-        else if (!getAll)
-            return -1;
-    }
-    return hash_value;
-}
-
-void SimSearcher::str2HashIndex(const string& str, vector<int>& word, bool adding=true, bool getAll=false)
-{
-    word.clear();
-    set<string> wordstrs;
-    split(str, wordstrs, ' ');
-    for (auto wordstr : wordstrs)
-    {
-        int index = findHashTableIndex(wordstr, jaccard_hash, adding, getAll);
-        if (index != -1 || getAll)
-            word.push_back(index);
-    }
-    sort(word.begin(), word.end());
-    auto iter = unique(word.begin(), word.end());
-    word.resize(distance(word.begin(), iter));
-}
-
-double jac_baoli(const string &s1, const string &s2)
-{
-    set<string> l1;
-    set<string> l2;
-    split(s1, l1, ' ');
-    split(s2, l2, ' ');
     int cnt = 0;
     for (auto w : l1)
     {
-        if(l2.find(w) != l2.end())
+        if (l2.find(w) != l2.end())
             cnt++;
     }
-    return (double)cnt / (double)(l1.size() + l2.size() - cnt);
-}
+    return ((double)cnt / (double)(l1.size() + l2.size() - cnt));
 
-double SimSearcher::compute_jaccard(vector<int> &l1, vector<int> &l2, double threshold)
-{
+    /*
     int len1 = l1.size();
     int h1 = 0;
     int len2 = l2.size();
@@ -179,12 +137,10 @@ double SimSearcher::compute_jaccard(vector<int> &l1, vector<int> &l2, double thr
         }
     }
     return ((double)cnt / (double)(len1 + len2 - cnt));
+    */
 }
 
-inline int min_3(int x, int y, int z)
-{
-    return min(min(x, y), z);
-}
+
 
 unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double threshold, int q)
 {
@@ -229,43 +185,18 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
     string str;
     while (getline(fin, str))
     {
-        context_jac.push_back(str);
-        context_ed.push_back(str);
+        context.push_back(str);
     }
-    line_num = context_jac.size();
-    // jacc inverse list
-    lines_indexes = new vector<int> *[line_num];
-    for (int i = 0; i < line_num; i++)
-    {
-        vector<int> line_word_indexes;
-        str2HashIndex(context_jac[i], line_word_indexes);
-        int word_num = line_word_indexes.size();
-        lines_indexes[i] = new vector<int>;
-        lines_indexes[i]->clear();
-        *(lines_indexes[i]) = line_word_indexes;
-        if (min_line_size > word_num)
-            min_line_size = word_num;
-		for (int j = 0; j < word_num; j++)
-		{
-			int index = line_word_indexes[j];
-            if (jaccard_list[index] == NULL)
-			{
-				jaccard_list[index] = new vector<int>;
-				jaccard_list[index]->clear();
-			}
-			jaccard_list[index]->push_back(i);
-			if (jaccard_list[index]->size() > M1)
-                M1 = jaccard_list[index]->size();
-		}
-	}
+    line_num = context.size();
 
-    // ed inverse list
-    q_gram = q;
+    // jacc inverse list
     for (int i = 0; i < line_num; i++)
     {
-        string linestr = context_ed[i];
+        string linestr = context[i];
         int len = linestr.length();
         int pos = 0;
+        set<string> linewords;
+        linewords.clear();
         for (int j = 0; j < len; j++)
         {
             if(linestr[j] == ' ')
@@ -273,16 +204,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
                 if(pos < j)
                 {
                     string word = linestr.substr(pos, j - pos);
-                    if (ed_list.find(word) != ed_list.end())
-                    {
-                        ed_list[word].push_back(i);
-                    }
-                    else
-                    {
-                        vector<int> wlist;
-                        wlist.clear();
-                        ed_list.insert(make_pair(word, wlist));
-                    }
+                    linewords.insert(word);
                 }
                 pos = j + 1;
             }
@@ -290,6 +212,41 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
         if (pos < len)
         {
             string word = linestr.substr(pos, len - pos);
+            linewords.insert(word);
+        }
+        if (min_line_size > linewords.size())
+            min_line_size = linewords.size();
+        lines_indexes.insert(make_pair(i, linewords));
+        for (auto word : linewords)
+        {
+            if (jaccard_list.find(word) != jaccard_list.end())
+            {
+                jaccard_list[word].push_back(i);
+            }
+            else
+            {
+                vector<int> wlist;
+                wlist.clear();
+                wlist.push_back(i);
+                jaccard_list.insert(make_pair(word, wlist));
+            }
+        }
+    }
+
+    // ed inverse list
+    q_gram = q;
+    for (int i = 0; i < line_num; i++)
+    {
+        string linestr = context[i];
+        int r = linestr.length() - q + 1;
+        set<string> linewords;
+        for (int j = 0; j < r; j++)
+        {
+            string word = linestr.substr(j, q);
+            linewords.insert(word);
+        }
+        for (auto word : linewords)
+        {
             if (ed_list.find(word) != ed_list.end())
             {
                 ed_list[word].push_back(i);
@@ -298,6 +255,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
             {
                 vector<int> wlist;
                 wlist.clear();
+                wlist.push_back(i);
                 ed_list.insert(make_pair(word, wlist));
             }
         }
@@ -308,25 +266,53 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<unsigned, double> > &result)
 {
 	result.clear();
-
     string q_str(query);
-    vector<pair<int, int>> cand_list; // index, list_length
+
     vector<int> cand_lines;
     vector<int> short_cand_lines;
     int *lines_count = new int[line_num];
     memset(lines_count, 0, sizeof(int) * line_num);
-    vector<int> query_indexes;
 
-    str2HashIndex(q_str, query_indexes, false);
-    int word_num = query_indexes.size();
-    int thres = get_jacc_threshold(threshold, word_num);
-    for (auto index : query_indexes)
+    vector<vector<int>> inverted_lists;
+    vector<index_len> vec_index;
+    int len = q_str.length();
+    int pos = 0;
+    set<string> querywords;
+    for (int j = 0; j < len; j++)
     {
-        cand_list.push_back(make_pair(index, jaccard_list[index]->size()));
+        if(q_str[j] == ' ')
+        {
+            if(pos < j)
+            {
+                string word = q_str.substr(pos, j - pos);
+                querywords.insert(word);
+            }
+            pos = j + 1;
+        }
     }
-
+    if (pos < len)
+    {
+        string word = q_str.substr(pos, len - pos);
+        querywords.insert(word);
+    }
+    for (auto word : querywords)
+    {
+        if (jaccard_list.find(word) != jaccard_list.end())
+        {
+            inverted_lists.push_back(jaccard_list[word]);
+        }
+    }
+    int thres = get_jacc_threshold(threshold, querywords.size());
+    int word_num = inverted_lists.size();
     int num_long_list = thres - 1;
     int num_short_list = word_num - num_long_list;
+    for (int i = 0; i < word_num; i++)
+    {
+        index_len idl;
+        idl.len = inverted_lists[i].size();
+        idl.index = i;
+        vec_index.push_back(idl);
+    }
 
     if (thres <= 0)
     {
@@ -335,11 +321,11 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
     }
     else
     {
-        nth_element(cand_list.begin(), cand_list.begin() + num_short_list - 1, cand_list.end());
+        sort(vec_index.begin(), vec_index.end());
         for (int i = 0; i < num_short_list; i++)
         {
-            int index = cand_list[i].first;
-            for (auto line : *(jaccard_list[index]))
+            int index = vec_index[i].index;
+            for (auto line : inverted_lists[index])
             {
                 if (lines_count[line] == 0)
                 {
@@ -356,8 +342,8 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
                 int num_unsearch_long_list = word_num - i;
                 if (cnt >= thres || cnt + num_unsearch_long_list < thres)
                     break;
-                int index = cand_list[i].first;
-                if (binary_search(jaccard_list[index]->begin(), jaccard_list[index]->end(), line))
+                int index = vec_index[i].index;
+                if (binary_search(inverted_lists[index].begin(), inverted_lists[index].end(), line))
                 {
                     cnt++;
                 }
@@ -371,9 +357,7 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
     sort(cand_lines.begin(), cand_lines.end());
     for (auto line : cand_lines)
     {
-        query_indexes.clear();
-        str2HashIndex(q_str, query_indexes, false, true);
-        double jaccard = compute_jaccard(query_indexes, *(lines_indexes[line]), threshold);
+        double jaccard = compute_jaccard(querywords, lines_indexes[line], threshold);
         if (jaccard >= threshold)
         {
             result.push_back(make_pair(line, jaccard));
@@ -396,26 +380,10 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 
     vector<vector<int>> inverted_lists;
     vector<index_len> vec_index;
-    int len = q_str.length();
-    int pos = 0;
-    for (int j = 0; j < len; j++)
+    int r = q_str.length() - q_gram + 1;
+    for (int j = 0; j < r; j++)
     {
-        if(q_str[j] == ' ')
-        {
-            if(pos < j)
-            {
-                string word = q_str.substr(pos, j - pos);
-                if (ed_list.find(word) != ed_list.end())
-                {
-                    inverted_lists.push_back(ed_list[word]);
-                }
-            }
-            pos = j + 1;
-        }
-    }
-    if (pos < len)
-    {
-        string word = q_str.substr(pos, len - pos);
+        string word = q_str.substr(j, q_gram);
         if (ed_list.find(word) != ed_list.end())
         {
             inverted_lists.push_back(ed_list[word]);
@@ -455,7 +423,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
         }
         for (auto line : short_cand_lines)
         {
-            if (my_abs(q_str.length() - context_ed[line].length()) > threshold)
+            if (my_abs(q_str.length() - context[line].length()) > threshold)
                 continue;
             int cnt = lines_count[line];
             for (int i = num_short_list; i < word_num; i++)
@@ -478,7 +446,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
     sort(cand_lines.begin(), cand_lines.end());
     for (auto line : cand_lines)
     {
-        int ed = compute_ed(q_str, context_ed[line], threshold, q_gram);
+        int ed = compute_ed(q_str, context[line], threshold, q_gram);
         if (ed <= threshold)
         {
             result.push_back(make_pair(line, ed));
