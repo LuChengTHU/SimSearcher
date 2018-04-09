@@ -9,6 +9,7 @@
 using namespace std;
 
 #define HASH_SIZE 1000011
+#define MAX_INT 0xffffff
 const double u = 0.0085;
 double M1 = 0;
 double M2 = 0;
@@ -25,6 +26,16 @@ inline int my_abs(int a)
         return a;
     else
         return -a;
+}
+
+inline int my_min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
+inline int my_max(int a, int b)
+{
+    return a > b ? a : b;
 }
 
 void split(string strtem, set<string>& strvec, char a)
@@ -194,23 +205,32 @@ unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double 
 {
     int m = str1.length();
     int n = str2.length();
+    if (my_abs(m - n) > threshold)
+        return MAX_INT;
+
     int dp[m+1][n+1];
-    for (int i = 0; i <= m; i++)
+    for (int i = 0; i <= my_min(threshold, m); i++)
     {
         dp[i][0] = i;
     }
-    for (int j = 0; j <= n; j++)
+    for (int j = 0; j <= my_min(threshold, n); j++)
     {
         dp[0][j] = j;
     }
     for (int i = 1; i <= m; i++)
     {
-        for (int j = 1; j <= n; j++)
+        int begin = my_max(i - threshold, 1);
+        int end = my_min(i + threshold, n);
+        if (begin > end)
+            break;
+        for (int j = begin; j <= end; j++)
         {
             int t = !(str1[i - 1] == str2[j - 1]);
+            int d1 = my_abs(i - 1 - j) > threshold ? MAX_INT : dp[i - 1][j];
+            int d2 = my_abs(i - j + 1) > threshold ? MAX_INT : dp[i][j - 1];
             dp[i][j] = min_3(
-                dp[i - 1][j] + 1,
-                dp[i][j - 1] + 1,
+                d1 + 1,
+                d2 + 1,
                 dp[i - 1][j - 1] + t);
         }
     }
@@ -462,8 +482,8 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
         }
         for (auto line : short_cand_lines)
         {
-            // if (my_abs(q_str.length() - context_ed[line].length()) > threshold)
-            //     continue;
+            if (my_abs(q_str.length() - context_ed[line].length()) > threshold)
+                continue;
             int cnt = lines_count[line];
             for (int i = num_short_list; i < word_num; i++)
             {
