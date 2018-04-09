@@ -32,13 +32,13 @@ public:
 
   void initIndex();
   int my_hash(string str);
-  int findHashTableIndex(string str, string *table, bool adding);
+  int findHashTableIndex(string str, string *table, bool adding, bool getAll);
 
-  void str2HashIndex(string str, vector<int> &word, bool adding);
+  void str2HashIndex(string str, vector<int> &word, bool adding, bool getAll);
   int get_jacc_threshold(double threshold, int num);
   double compute_jaccard(vector<int> &l1, vector<int> &l2, double threshold);
 
-  void str2QGramHashIndex(string str, int q, vector<int> &word, bool adding);
+  void str2QGramHashIndex(string str, int q, vector<int> &word, bool adding, bool getAll);
   int get_ed_threshold(double threshold, int query_len, int q);
   unsigned compute_ed(const string &s1, const string &s2, double threshold, int q);
 

@@ -1,25 +1,28 @@
 #include "SimSearcher.h"
 #include <iostream>
+
 using namespace std;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	SimSearcher searcher;
 
 	vector<pair<unsigned, unsigned> > resultED;
 	vector<pair<unsigned, double> > resultJaccard;
 
-	unsigned q = 3, edThreshold = 2;
-	double jaccardThreshold = 0.1;
+	unsigned q = 3, edThreshold = 7;
+	double jaccardThreshold = 0.2;
 
-    searcher.createIndex(argv[1], q);
-    searcher.searchJaccard("hello world", jaccardThreshold, resultJaccard);
-    searcher.searchED("toto jjl", edThreshold, resultED);
-    int ed_size = resultED.size();
-    cout << "Result_size: " << ed_size << endl;
-    for (int i = 0; i < ed_size; i++)
-        cout << resultED[i].first << " " << resultED[i].second << endl;
+	cout << "build index:" << searcher.createIndex(argv[1], q)<<endl;;
+	searcher.searchJaccard("query query", jaccardThreshold, resultJaccard);
+	cout << "jaccard result" << endl;
+	for (int i = 0; i < resultJaccard.size(); i++)
+		cout << resultJaccard[i].first << " " << resultJaccard[i].second << endl;
+	searcher.searchED("query", edThreshold, resultED);
+	cout << "ed result" << endl;
+	for (int i = 0; i < resultED.size(); i++)
+		cout << resultED[i].first << " " << resultED[i].second << endl;
 
-    return 0;
+	return 0;
 }
 
