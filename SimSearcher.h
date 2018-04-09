@@ -38,7 +38,6 @@ public:
   int get_jacc_threshold(double threshold, int num);
   double compute_jaccard(vector<int> &l1, vector<int> &l2, double threshold);
 
-  void str2QGramHashIndex(const string& str, int q, vector<int> &word, bool adding, bool getAll);
   int get_ed_threshold(double threshold, int query_len, int q);
   unsigned compute_ed(const string &s1, const string &s2, double threshold, int q);
 
