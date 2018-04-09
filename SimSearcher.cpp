@@ -101,13 +101,13 @@ int SimSearcher::get_ed_threshold(double threshold, int query_len, int q)
     return ceil(t1) > 0 ? ceil(t1) : 0;
 }
 
-int SimSearcher::my_hash(string str) {
+int SimSearcher::my_hash(const string& str) {
     std::hash<std::string> hash_fn;
     size_t str_hash = hash_fn(str);
     return str_hash % HASH_SIZE;
 }
 
-int SimSearcher::findHashTableIndex(string str, string* table, bool adding, bool getAll)
+int SimSearcher::findHashTableIndex(const string& str, string* table, bool adding, bool getAll)
 {
     int hash_value = my_hash(str);
     int inc = 1;
@@ -127,7 +127,7 @@ int SimSearcher::findHashTableIndex(string str, string* table, bool adding, bool
     return hash_value;
 }
 
-void SimSearcher::str2HashIndex(string str, vector<int>& word, bool adding=true, bool getAll=false)
+void SimSearcher::str2HashIndex(const string& str, vector<int>& word, bool adding=true, bool getAll=false)
 {
     word.clear();
     set<string> wordstrs;
@@ -143,7 +143,7 @@ void SimSearcher::str2HashIndex(string str, vector<int>& word, bool adding=true,
     word.resize(distance(word.begin(), iter));
 }
 
-void SimSearcher::str2QGramHashIndex(string str, int q, vector<int>& word, bool adding=true, bool getAll=true)
+void SimSearcher::str2QGramHashIndex(const string& str, int q, vector<int>& word, bool adding=true, bool getAll=true)
 {
     word.clear();
     int r = str.length() - q + 1;
@@ -292,8 +292,6 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
                 ed_list[index]->clear();
             }
             ed_list[index]->push_back(i);
-            if (ed_list[index]->size() > M2)
-                M2 = ed_list[index]->size();
         }
     }
     return SUCCESS;
@@ -319,31 +317,13 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
         cand_list.push_back(make_pair(index, jaccard_list[index]->size()));
     }
 
-    int num_long_list = (double)thres / (u * log(M1) + 1.0);
-    num_long_list = num_long_list > thres - 1 ? (thres - 1) : num_long_list;
+    int num_long_list = thres - 1;
     int num_short_list = word_num - num_long_list;
 
     if (thres <= 0)
     {
         for (int i = 0; i < line_num; i++)
             cand_lines.push_back(i);
-    }
-    else if (num_short_list <= 0 || thres <= 0)
-    {
-        for (auto index : query_indexes)
-        {
-            for (auto line : *(jaccard_list[index]))
-            {
-                lines_count[line]++;
-            }
-        }
-        for (int i = 0; i < line_num; i++)
-        {
-            if(lines_count[i] >= thres)
-            {
-                cand_lines.push_back(i);
-            }
-        }
     }
     else
     {
@@ -393,17 +373,7 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
     }
 
     delete[] lines_count;
-
-    // for (int i = 0; i < line_num; i++)
-    // {
-    //     double jac = jac_baoli(q_str, context_jac[i]);
-    //     // cout << "Line: " << i << " , jac: " << jac << endl;
-    //     if (jac >= threshold)
-    //     {
-    //         result.push_back(make_pair(i, jac));
-    //     }
-    // }
-    // return SUCCESS;
+    return SUCCESS;
 }
 
 int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<unsigned, unsigned> > &result)
@@ -426,44 +396,13 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
         cand_list.push_back(make_pair(index, ed_list[index]->size()));
     }
 
-    int num_long_list = (double)thres / (u * log(M2) + 1.0);
-    num_long_list = min(num_long_list, thres - 1);
+    int num_long_list = thres - 1;
     int num_short_list = word_num - num_long_list;
-
-    // cout << "Thres: " << thres << endl;
-    // cout << "Num short list: " << num_short_list << endl;
-    // cout << "Word Num: " << word_num << endl;
-    // for (auto index : query_indexes)
-    // {
-    //     cout << "Index: " << index << ", str: " << ed_hash[index] << endl;
-    //     cout << "Lines: " << endl;
-    //     for (auto line : *(ed_list[index]))
-    //     {
-    //         cout << line << endl;
-    //     }
-    // }
 
     if (thres <= 0)
     {
         for (int i = 0; i < line_num; i++)
             cand_lines.push_back(i);
-    }
-    else if (num_long_list <= 0 || num_short_list <= 0)
-    {
-        for (auto index : query_indexes)
-        {
-            for (auto line : *(ed_list[index]))
-            {
-                lines_count[line]++;
-            }
-        }
-        for (int i = 0; i < line_num; i++)
-        {
-            if(lines_count[i] >= thres)
-            {
-                cand_lines.push_back(i);
-            }
-        }
     }
     else
     {
@@ -505,9 +444,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
     sort(cand_lines.begin(), cand_lines.end());
     for (auto line : cand_lines)
     {
-        // cout << "Cand: " << line << endl;
         int ed = compute_ed(q_str, context_ed[line], threshold, q_gram);
-        // cout << "Line: " << line << " , ed: " << ed << endl;
         if (ed <= threshold)
         {
             result.push_back(make_pair(line, ed));

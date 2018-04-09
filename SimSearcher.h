@@ -3,7 +3,8 @@
 #include <utility>
 #include <string>
 #include <algorithm>
-#include <map>
+#include <unordered_map>
+#include <set>
 
 using namespace std;
 const int SUCCESS = 0;
@@ -24,21 +25,20 @@ public:
   string *jaccard_hash;
 
   int min_line_gram_size;
-  vector<int> **ed_list;
-  string *ed_hash;
+  unordered_map<string, vector<int>> ed_list;
 
   SimSearcher();
   ~SimSearcher();
 
   void initIndex();
-  int my_hash(string str);
-  int findHashTableIndex(string str, string *table, bool adding, bool getAll);
+  int my_hash(const string& str);
+  int findHashTableIndex(const string& str, string *table, bool adding, bool getAll);
 
-  void str2HashIndex(string str, vector<int> &word, bool adding, bool getAll);
+  void str2HashIndex(const string& str, vector<int> &word, bool adding, bool getAll);
   int get_jacc_threshold(double threshold, int num);
   double compute_jaccard(vector<int> &l1, vector<int> &l2, double threshold);
 
-  void str2QGramHashIndex(string str, int q, vector<int> &word, bool adding, bool getAll);
+  void str2QGramHashIndex(const string& str, int q, vector<int> &word, bool adding, bool getAll);
   int get_ed_threshold(double threshold, int query_len, int q);
   unsigned compute_ed(const string &s1, const string &s2, double threshold, int q);
 
