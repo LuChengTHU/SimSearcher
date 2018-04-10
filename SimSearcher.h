@@ -35,7 +35,7 @@ public:
   double compute_jaccard(std::set<std::string> &l1, std::set<std::string> &l2, double threshold);
 
   int get_ed_threshold(double threshold, int query_len, int q);
-  unsigned compute_ed(const std::string &s1, const std::string &s2, double threshold, int q);
+  unsigned compute_ed(const char* s1, int len1, const char* s2, int len2, double threshold, int q);
 
   int createIndex(const char *filename, unsigned q);
   int searchJaccard(const char *query, double threshold, std::vector<std::pair<unsigned, double>> &result);

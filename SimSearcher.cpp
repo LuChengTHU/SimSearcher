@@ -45,7 +45,7 @@ inline int my_max(int a, int b)
 
 inline int min_3(int x, int y, int z)
 {
-    return min(min(x, y), z);
+    return my_min(my_min(x, y), z);
 }
 
 inline unsigned long long my_hash(const char* s,int len)
@@ -95,14 +95,14 @@ void SimSearcher::initIndex()
     min_line_size = MY_MAX_INT;
 }
 
-int SimSearcher::get_jacc_threshold(double threshold, int num)
+inline int SimSearcher::get_jacc_threshold(double threshold, int num)
 {
     double t1 = threshold * num;
     double t2 = (num + min_line_size) * threshold / (1 + threshold);
     return ceil(t1) > ceil(t2) ? ceil(t1) : ceil(t2);
 }
 
-int SimSearcher::get_ed_threshold(double threshold, int query_len, int q)
+inline int SimSearcher::get_ed_threshold(double threshold, int query_len, int q)
 {
     double t1 = query_len - q + 1 - threshold * q;
     return ceil(t1) > 0 ? ceil(t1) : 0;
@@ -147,15 +147,12 @@ double SimSearcher::compute_jaccard(set<string> &l1, set<string> &l2, double thr
 
 
 
-unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double threshold, int q)
+unsigned SimSearcher::compute_ed(const char* str1, int m, const char* str2, int n, double threshold, int q)
 {
-    int m = str1.length();
-    int n = str2.length();
     if (my_abs(m - n) > threshold)
         return MY_MAX_INT;
-
     int dp[m+1][n+1];
-    for (int i = 0; i <= my_min(threshold, m); i++)
+        for (int i = 0; i <= my_min(threshold, m); i++)
     {
         dp[i][0] = i;
     }
@@ -410,51 +407,50 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
     {
         for (int i = 0; i < line_num; i++)
             cand_lines.push_back(i);
-    }
-    else
-    {
-        sort(vec_index.begin(), vec_index.end());
-        for (int i = 0; i < num_short_list; i++)
-        {
-            int index = vec_index[i].index;
-            for (auto line : ed_list[index])
-            {
-                if (time_count[line] != global_time)
-                {
-                    time_count[line] = global_time;
-                    lines_count[line] = 0;
-                    short_cand_lines.push_back(line);
-                }
-                lines_count[line]++;
-            }
         }
-        for (auto line : short_cand_lines)
+        else
         {
-            if (my_abs(query_len - context[line].length()) > threshold)
-                continue;
-            int cnt = lines_count[line];
-            for (int i = num_short_list; i < word_num; i++)
+            sort(vec_index.begin(), vec_index.end());
+            for (int i = 0; i < num_short_list; i++)
             {
-                int num_unsearch_long_list = word_num - i;
-                if (cnt >= thres || cnt + num_unsearch_long_list < thres)
-                    break;
                 int index = vec_index[i].index;
-                if (binary_search(ed_list[index].begin(), ed_list[index].end(), line))
+                for (auto line : ed_list[index])
                 {
-                    cnt++;
+                    if (time_count[line] != global_time)
+                    {
+                        time_count[line] = global_time;
+                        lines_count[line] = 0;
+                        short_cand_lines.push_back(line);
+                    }
+                    lines_count[line]++;
                 }
             }
-            if (cnt >= thres)
+            for (auto line : short_cand_lines)
             {
-                cand_lines.push_back(line);
+                if (my_abs(query_len - context[line].length()) > threshold)
+                    continue;
+                int cnt = lines_count[line];
+                for (int i = num_short_list; i < word_num; i++)
+                {
+                    int num_unsearch_long_list = word_num - i;
+                    if (cnt >= thres || cnt + num_unsearch_long_list < thres)
+                        break;
+                    int index = vec_index[i].index;
+                    if (binary_search(ed_list[index].begin(), ed_list[index].end(), line))
+                    {
+                        cnt++;
+                    }
+                }
+                if (cnt >= thres)
+                {
+                    cand_lines.push_back(line);
+                }
             }
         }
-    }
     sort(cand_lines.begin(), cand_lines.end());
     for (auto line : cand_lines)
     {
-        string q_str(query);
-        int ed = compute_ed(q_str, context[line], threshold, q_gram);
+        int ed = compute_ed(query, query_len, context[line].c_str(), context[line].length(), threshold, q_gram);
         if (ed <= threshold)
         {
             result.push_back(make_pair(line, ed));
