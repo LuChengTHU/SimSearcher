@@ -3,23 +3,18 @@
 #include <fstream>
 #include <cmath>
 #include <cstring>
-#include <functional>
 #include <iostream>
-#include <set>
 using namespace std;
 
 #define HASH_SIZE 1000011
-#define MAX_INT 0xffffff
-const double u = 0.0085;
-double M1 = 0;
-double M2 = 0;
+const int MY_MAX_INT = 0xffffff;
 
 struct index_len
 {
     int index;
     int len;
 
-    bool operator< (const index_len& idl)
+    bool operator< (const index_len& idl) const
     {
         return len < idl.len;
     }
@@ -87,7 +82,7 @@ void SimSearcher::initIndex()
     ed_list.clear();
     jaccard_list.clear();
     lines_indexes.clear();
-    min_line_size = MAX_INT;
+    min_line_size = MY_MAX_INT;
 }
 
 int SimSearcher::get_jacc_threshold(double threshold, int num)
@@ -147,7 +142,7 @@ unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double 
     int m = str1.length();
     int n = str2.length();
     if (my_abs(m - n) > threshold)
-        return MAX_INT;
+        return MY_MAX_INT;
 
     int dp[m+1][n+1];
     for (int i = 0; i <= my_min(threshold, m); i++)
@@ -167,8 +162,8 @@ unsigned SimSearcher::compute_ed(const string &str1, const string &str2, double 
         for (int j = begin; j <= end; j++)
         {
             int t = !(str1[i - 1] == str2[j - 1]);
-            int d1 = my_abs(i - 1 - j) > threshold ? MAX_INT : dp[i - 1][j];
-            int d2 = my_abs(i - j + 1) > threshold ? MAX_INT : dp[i][j - 1];
+            int d1 = my_abs(i - 1 - j) > threshold ? MY_MAX_INT : dp[i - 1][j];
+            int d2 = my_abs(i - j + 1) > threshold ? MY_MAX_INT : dp[i][j - 1];
             dp[i][j] = min_3(
                 d1 + 1,
                 d2 + 1,
