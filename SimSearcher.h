@@ -15,13 +15,16 @@ public:
   std::vector<std::string> context;
 
   int line_num;
+  int global_time;
+  int *lines_count;
+  int *time_count;
   int q_gram;
 
   int min_line_size;
   std::unordered_map<int, std::set<std::string>> lines_indexes;
   std::unordered_map<std::string, std::vector<int>> jaccard_list;
 
-  std::unordered_map<std::string, std::vector<int>> ed_list;
+  std::unordered_map<unsigned long long, std::vector<int>> ed_list;
 
   SimSearcher();
   ~SimSearcher();
