@@ -59,7 +59,7 @@ inline unsigned long long my_hash(const char* s,int len)
     for (int i = 0; i < len; i++) {
         hash = hash * seed + (int)s[i];
     }
-    return hash;
+    return hash & 0x7FFFFFFF;
 }
 
 void split(string strtem, set<string>& strvec, char a)
