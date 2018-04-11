@@ -21,8 +21,8 @@ public:
   int q_gram;
 
   int min_line_size;
-  std::unordered_map<int, std::set<std::string>> lines_indexes;
-  std::unordered_map<std::string, std::vector<int>> jaccard_list;
+  std::unordered_map<int, std::set<unsigned long long>> lines_indexes;
+  std::unordered_map<unsigned long long, std::vector<int>> jaccard_list;
 
   std::unordered_map<unsigned long long, std::vector<int>> ed_list;
 
@@ -32,10 +32,10 @@ public:
   void initIndex();
 
   int get_jacc_threshold(double threshold, int num);
-  double compute_jaccard(std::set<std::string> &l1, std::set<std::string> &l2, double threshold);
+  double compute_jaccard(std::set<unsigned long long> &l1, std::set<unsigned long long> &l2, double threshold);
 
   int get_ed_threshold(double threshold, int query_len, int q);
-  unsigned compute_ed(const char* s1, int len1, const char* s2, int len2, double threshold, int q);
+  unsigned compute_ed(const char* s1, int len1, const char* s2, int len2, unsigned threshold, int q);
 
   int createIndex(const char *filename, unsigned q);
   int searchJaccard(const char *query, double threshold, std::vector<std::pair<unsigned, double>> &result);
