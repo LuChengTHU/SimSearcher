@@ -1,20 +1,16 @@
 # 数据库专题训练 Similarity search
 
+计52 路橙 2015010137
+
 ## 主要数据结构与算法
 
-### unordered_map建立的哈希表
+### Trie树
 
-  利用*unordered_map*建立由`string`到`vector<int>`的哈希对应关系，从而可以很方便地快速建立倒排表。
+  利用*Trie*建立由`string`到`vector<int>`的对应关系，从而可以很方便地快速建立倒排表。
 
-具体地，维护三个这样的map：
+具体地，利用*Trie*树的特性，每个节点都对应一个`vector<int>`，从而当查询到该节点时即找到了对应word的列表。每次查询都是*O(N)*，N为字符串长度。
 
-```c++
-  unordered_map<int, set<string>> lines_indexes;
-  unordered_map<string, vector<int>> jaccard_list;
-  unordered_map<string, vector<int>> ed_list;
-```
-
-其中`lines_indexes`维护了每一行对应的单词序列（用于jaccard计算时求交集），`jaccard_list`维护了每个单词对应的倒排列表，`ed_list`维护了每个qgram对应的倒排列表。
+建立倒排表时直接维护`vector<int>*`的数组即可。
 
 ### Merge Opt
 
@@ -26,7 +22,7 @@
 
 对短列表进行**scanout**搜索，获得每一个行号及其在短列表中出现的次数。接着对每个短列表中出现的行号，在每个长列表中二分查找，记录它出现的次数。若出现次数 + 剩余长列表数 < T，则不可能达到阈值，因而直接舍弃。否则若执行到最后次数大于等于`T`，则加入到备选列表里。
 
-最后，对备选列表进行精细的DP计算，得到准确的编辑距离，再做进一步的取舍，得到最终的结果。
+最后，对备选列表进行精细计算，得到准确的编辑距离，再做进一步的取舍，得到最终的结果。
 
 
 
@@ -76,6 +72,6 @@
 ### calculate
 
 - 计算jaccard：
-  - 直接利用stl库对两个set取交集即可。
+  - 直接对两个set取交集即可，即遍历一个set，查看另一个set里是否含有该元素。
 - 计算ED：
   - 利用O((2τ+1)*n)复杂度的动态规划求解，每行与每列最多只需要计算2τ+1次。

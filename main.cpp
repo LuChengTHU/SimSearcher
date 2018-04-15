@@ -13,9 +13,9 @@ int main(int argc, char** argv)
 	unsigned q = 3, edThreshold = 7;
 	double jaccardThreshold = 0.2;
 
-	cout << "build index:" << searcher.createIndex(argv[1], q)<<endl;;
-	searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
-	cout << "jaccard result" << endl;
+	cout << "build index:" << searcher.createIndex(argv[1], q)<<endl;
+    searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
+    cout << "jaccard result" << endl;
 	for (int i = 0; i < resultJaccard.size(); i++)
 		cout << resultJaccard[i].first << " " << resultJaccard[i].second << endl;
 	searcher.searchED("query", edThreshold, resultED);
